@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentinel · Fraud Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 8.3-8 9-4.8-.7-8-4.5-8-9V6l8-3z"/><path d="M8.5 12.2l2.5 2.5 4.5-5"/></svg>
+      </div>
+      <div><div class="brand-name">Sentinel</div><div class="brand-sub">Fraud Monitor</div></div>
+    </div>
+
+    <nav class="nav" id="nav">
+      <a data-page="dashboard" class="active"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>Overview</a>
+      <a data-page="alerts"><svg viewBox="0 0 24 24"><path d="M12 3l9.5 17h-19L12 3z"/><path d="M12 10v4M12 17.5v.01"/></svg>Alerts<span class="badge" id="navAlertCount">0</span></a>
+      <a data-page="transactions"><svg viewBox="0 0 24 24"><path d="M7 7h13M16 3l4 4-4 4"/><path d="M17 17H4M8 13l-4 4 4 4"/></svg>Transactions</a>
+      <a data-page="rules"><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Detection rules</a>
+      <a data-page="audit"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>Audit log</a>
+    </nav>
+
+    <div class="side-card">
+      <div class="side-card-top"><span class="pulse"></span> Engine online</div>
+      <div class="side-card-num" id="sideRules">–</div>
+      <div class="side-card-sub">active detection rules scoring every transaction in real time</div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <h1 id="pageTitle">Overview</h1>
+        <p id="pageSub">Live view of transaction risk across all accounts</p>
+      </div>
+      <div class="top-actions">
+        <label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input id="globalSearch" placeholder="Search txn ID, account or customer…" autocomplete="off"></label>
+        <button class="btn primary" id="btnNewTxn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New transaction</button>
+        <div class="avatar" title="Admin">AD</div>
+      </div>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="page active" id="page-dashboard">
+      <div class="kpis" id="kpis"></div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head">
+            <div><h3>Transaction volume &amp; alerts</h3><p class="muted">Daily completed volume against alerts raised</p></div>
+            <div class="seg" id="trendSeg"><button data-days="7">7D</button><button data-days="14" class="on">14D</button><button data-days="30">30D</button></div>
+          </div>
+          <div class="chart-box"><canvas id="trendChart"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div><h3>Alerts by severity</h3><p class="muted">All alerts raised</p></div></div>
+          <div class="donut-wrap"><canvas id="sevChart"></canvas><div class="donut-center"><b id="sevTotal">0</b><span>alerts</span></div></div>
+          <div class="legend" id="sevLegend"></div>
+        </div>
+      </div>
+
+      <div class="grid-2b">
+        <div class="card">
+          <div class="card-head"><div><h3>Needs review</h3><p class="muted">Highest-risk open alerts</p></div><a class="link" data-go="alerts">View all →</a></div>
+          <div id="recentAlerts"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div><h3>Highest-risk accounts</h3><p class="muted">Ranked by cumulative alert score</p></div></div>
+          <div id="topAccounts"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Alerts ===== -->
+    <section class="page" id="page-alerts">
+      <div class="card">
+        <div class="toolbar">
+          <div class="chips" id="alertChips">
+            <button data-status="" class="on">All</button><button data-status="OPEN">Open</button>
+            <button data-status="UNDER_REVIEW">Under review</button><button data-status="CONFIRMED">Confirmed</button><button data-status="DISMISSED">Dismissed</button>
+          </div>
+          <select id="alertSev" class="input sm"><option value="">All severities</option><option>CRITICAL</option><option>HIGH</option><option>MEDIUM</option><option>LOW</option></select>
+        </div>
+        <div class="table-wrap"><table class="tbl" id="alertsTbl"></table></div>
+      </div>
+    </section>
+
+    <!-- ===== Transactions ===== -->
+    <section class="page" id="page-transactions">
+      <div class="card">
+        <div class="toolbar">
+          <label class="search grow"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+            <input id="fSearch" placeholder="Txn ID, account number or customer"></label>
+          <select id="fType" class="input sm"><option value="">All types</option><option>DEPOSIT</option><option>WITHDRAWAL</option><option>TRANSFER</option></select>
+          <select id="fStatus" class="input sm"><option value="">All statuses</option><option>COMPLETED</option><option>FLAGGED</option><option>BLOCKED</option><option>FAILED</option></select>
+          <input id="fMin" class="input sm num" type="number" min="0" placeholder="Min ₹">
+          <input id="fMax" class="input sm num" type="number" min="0" placeholder="Max ₹">
+        </div>
+        <div class="table-wrap"><table class="tbl" id="txnTbl"></table></div>
+        <div class="pager"><span class="muted" id="pageInfo"></span><div><button class="btn ghost sm" id="prevPg">‹ Prev</button><button class="btn ghost sm" id="nextPg">Next ›</button></div></div>
+      </div>
+    </section>
+
+    <!-- ===== Rules ===== -->
+    <section class="page" id="page-rules">
+      <div class="notice"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.01"/></svg>
+        <div><b>Alerts are potential fraud, not proof.</b> Scores add up the weights of every rule that fires (capped at 100). Score ≥ 30 raises an alert for human review, ≥ 90 blocks the transaction. Changes are written to the audit log.</div></div>
+      <div class="rules-grid" id="rulesGrid"></div>
+    </section>
+
+    <!-- ===== Audit ===== -->
+    <section class="page" id="page-audit">
+      <div class="card"><div class="table-wrap"><table class="tbl" id="auditTbl"></table></div></div>
+    </section>
+  </main>
+</div>
+
+<!-- ============ ALERT DRAWER ============ -->
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true"></aside>
+
+<!-- ============ NEW TRANSACTION MODAL ============ -->
+<div class="modal" id="txnModal" aria-hidden="true">
+  <div class="modal-card">
+    <div class="card-head"><div><h3>New transaction</h3><p class="muted">Runs through the real engine — row-locked, scored, and alerted instantly</p></div><button class="icon-btn" data-close>✕</button></div>
+    <div class="seg full" id="mType"><button data-t="TRANSFER" class="on">Transfer</button><button data-t="DEPOSIT">Deposit</button><button data-t="WITHDRAWAL">Withdrawal</button></div>
+    <div class="form">
+      <label id="mFromWrap">From account<select id="mFrom" class="input"></select></label>
+      <label id="mToWrap">To account<select id="mTo" class="input"></select></label>
+      <label>Amount (₹)<input id="mAmount" class="input" type="number" min="1" value="5000"></label>
+      <div class="row2">
+        <label>Channel<select id="mChannel" class="input"><option>ONLINE</option><option>MOBILE</option><option>ATM</option><option>BRANCH</option></select></label>
+        <label>Country code<input id="mCountry" class="input" maxlength="2" value="IN"></label>
+      </div>
+      <div class="hints">Try: <a data-fill="260000|RU">₹2.6L from RU</a> · <a data-fill="49500|IN">₹49,500</a> · <a id="simLogins">simulate 4 failed logins</a></div>
+    </div>
+    <div class="result" id="mResult"></div>
+    <div class="modal-foot"><button class="btn ghost" data-close>Close</button><button class="btn primary" id="mSubmit">Submit transaction</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="/static/chart.umd.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>

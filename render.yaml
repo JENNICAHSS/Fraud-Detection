@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: sentinel-fraud-monitor
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt && python seed.py
+    startCommand: gunicorn --chdir app app:app --bind 0.0.0.0:$PORT --workers 2
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sentinel-db
+          property: connectionString
+databases:
+  - name: sentinel-db
+    plan: free
+    databaseName: fraud_monitor
